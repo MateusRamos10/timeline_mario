@@ -86,6 +86,12 @@
             align-items: center;
             z-index: 10;
             position: relative;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .stage header.fade-out {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .stage header h1,
@@ -365,6 +371,8 @@
 
         .mario.on-yoshi {
             margin-bottom: 45px;
+            background-position: -160px 0 !important;
+            animation: none !important;
         }
 
         @keyframes marioJump {
@@ -466,7 +474,7 @@
         }
 
         .sign-post:nth-child(1) {
-            margin-left: 200px;
+            margin-left: 100px;
             /* <--- Só adicionar essa linha e alterar! */
             position: relative;
             z-index: 4;
@@ -558,6 +566,7 @@
         const mario = document.getElementById('mario');
         const ground = document.getElementById('ground');
         const grass = document.getElementById('grass');
+        const header = document.querySelector('header');
 
         let scrollX = 0, maxScroll = 0, walkTimeout, lastScrollX = 0, starTimeout;
 
@@ -614,6 +623,12 @@
             if (scrollX < 0) scrollX = 0;
             if (scrollX > maxScroll) scrollX = maxScroll;
 
+            if (scrollX > 0) {
+                header.classList.add('fade-out');
+            } else {
+                header.classList.remove('fade-out');
+            }
+
             eventsEl.style.transform = 'translateX(' + (-scrollX) + 'px)';
             ground.style.backgroundPosition = (-scrollX) + 'px 32px';
             grass.style.backgroundPosition = (-scrollX) + 'px 0';
@@ -639,12 +654,17 @@
                 acc += item.spacing + 25;
                 const el = document.getElementById('event-' + i);
                 const dist = scrollX - acc;
+                const crossed = (lastScrollX < acc && scrollX >= acc) || (lastScrollX > acc && scrollX <= acc);
 
-                if (Math.abs(dist) < 50) {
+                if (Math.abs(dist) < 60) {
                     el.classList.add('active');
-                    triggerAction(item, i, dist);
                 } else {
                     el.classList.remove('active');
+                }
+
+                if (Math.abs(dist) < 50 || crossed) {
+                    triggerAction(item, i, dist);
+                } else {
                     item.triggered = false;
                     if (item.type === 'yoshi') {
                         mario.classList.remove('on-yoshi');
@@ -659,7 +679,7 @@
         function triggerAction(item, index, dist) {
             if (item.triggered) return;
 
-            if (item.type === 'block' && Math.abs(dist) < 50) {
+            if (item.type === 'block') {
                 item.triggered = true;
                 mario.classList.remove('walk', 'idle');
                 mario.classList.add('jumping');
@@ -668,7 +688,7 @@
                     mario.classList.add('idle');
                 }, 500);
             }
-            if (item.type === 'enemy' && Math.abs(dist) < 50) {
+            if (item.type === 'enemy') {
                 item.triggered = true;
                 mario.classList.remove('walk', 'idle', 'jumping');
                 mario.classList.add('dead');
@@ -680,7 +700,7 @@
                     mario.style.transform = 'translateX(-50%) scaleX(1)';
                 }, 800);
             }
-            if (item.type === 'star' && Math.abs(dist) < 50) {
+            if (item.type === 'star') {
                 item.triggered = true;
                 mario.classList.add('star-power');
                 clearTimeout(starTimeout);
@@ -688,17 +708,19 @@
                     mario.classList.remove('star-power');
                 }, 3000);
             }
-            if (item.type === 'peach' && Math.abs(dist) < 50) {
+            if (item.type === 'peach') {
                 item.triggered = true;
                 const img = document.querySelector('#event-' + index + ' .sprite-peach');
                 if (img) img.style.transform = 'translateY(-15px)';
                 setTimeout(() => { if (img) img.style.transform = ''; }, 600);
             }
-            if (item.type === 'yoshi' && Math.abs(dist) < 10) {
-                item.triggered = true;
-                mario.classList.add('on-yoshi');
-                const signs = document.getElementById('finale-signs');
-                if (signs) signs.classList.add('show');
+            if (item.type === 'yoshi') {
+                if (Math.abs(dist) < 10) {
+                    item.triggered = true;
+                    mario.classList.add('on-yoshi');
+                    const signs = document.getElementById('finale-signs');
+                    if (signs) signs.classList.add('show');
+                }
             }
         }
 
